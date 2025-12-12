@@ -21,6 +21,7 @@ import java.util.concurrent.Callable;
                 HistoryCommand.class,
                 ConfigCommand.class,
                 CacheCommand.class,
+                DictionaryCommand.class,
                 FeedbackCommand.class,
                 VersionCommand.class,
                 CommandLine.HelpCommand.class
