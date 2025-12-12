@@ -1,0 +1,48 @@
+# JobMatch AI Default Configuration
+# This file contains built-in defaults. Users can override in ~/.jobmatch/config.yaml
+
+llm:
+  # Provider: local (Ollama) or cloud (OpenAI compatible API)
+  provider: "local"
+
+  # Local LLM configuration (Ollama)
+  local:
+    base_url: "http://localhost:11434"
+    model: "qwen2.5:14b"
+    timeout: 120
+
+  # Cloud LLM configuration
+  cloud:
+    api_key: "${LLM_API_KEY}"
+    model: "gpt-4o-mini"
+    base_url: "https://api.openai.com/v1"
+    timeout: 60
+
+  # Common LLM settings
+  common:
+    temperature: 0.1
+    max_tokens: 4096
+    retry_times: 2
+
+storage:
+  data_dir: "~/.jobmatch/data"
+  cache_dir: "~/.jobmatch/cache"
+  cache_enabled: true
+  cache_max_size_mb: 100
+  cache_ttl_days: 7
+
+logging:
+  level: "INFO"
+  file: "~/.jobmatch/logs/jobmatch.log"
+  max_size_mb: 10
+  max_files: 5
+  console: true
+
+output:
+  default_format: "markdown"
+  language: "zh"
+  color: true
+
+privacy:
+  pii_masking: true
+  telemetry: false
