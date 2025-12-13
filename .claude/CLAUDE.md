@@ -92,7 +92,6 @@ job-match/
 │   │   ├── java/com/jobmatch/
 │   │   │   ├── JobMatchApplication.java
 │   │   │   ├── cli/        # CLI 命令层
-│   │   │   ├── service/    # 业务逻辑层
 │   │   │   ├── llm/        # LLM 集成层
 │   │   │   ├── parser/     # 解析器
 │   │   │   ├── matcher/    # 匹配引擎
