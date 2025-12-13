@@ -23,6 +23,7 @@ import java.util.List;
 /**
  * Service for parsing JD text into structured data.
  * Uses LLM for extraction with requirement classification.
+ * Falls back to rule-based parsing when LLM is unavailable.
  */
 public class JDParserService {
 
@@ -32,10 +33,18 @@ public class JDParserService {
 
     private final LlmClient llmClient;
     private final String promptTemplate;
+    private final RuleBasedParser ruleBasedParser;
+    private final boolean fallbackEnabled;
 
     public JDParserService(LlmClient llmClient) {
+        this(llmClient, true);
+    }
+
+    public JDParserService(LlmClient llmClient, boolean fallbackEnabled) {
         this.llmClient = llmClient;
         this.promptTemplate = loadPromptTemplate();
+        this.ruleBasedParser = new RuleBasedParser();
+        this.fallbackEnabled = fallbackEnabled;
     }
 
     /**
@@ -98,11 +107,37 @@ public class JDParserService {
 
         } catch (LlmException e) {
             log.error("LLM error during JD parsing: {}", e.getMessage());
+            if (fallbackEnabled) {
+                log.warn("Falling back to rule-based parsing for JD");
+                return fallbackParse(jdText, contentHash);
+            }
             throw new JobMatchException(2002, "JD parsing failed: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Unexpected error during JD parsing", e);
+            if (fallbackEnabled) {
+                log.warn("Falling back to rule-based parsing for JD");
+                return fallbackParse(jdText, contentHash);
+            }
             throw new JobMatchException(2002, "JD parsing failed: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Fallback to rule-based parsing when LLM fails.
+     */
+    private JDParsed fallbackParse(String jdText, String contentHash) {
+        JDParsed result = ruleBasedParser.parseJD(jdText);
+        result.setContentHash(contentHash);
+
+        // Mark as degraded/simplified mode
+        if (result.getParseMeta() != null) {
+            ParseMeta meta = result.getParseMeta();
+            meta.setModelVersion("rule-engine-v1 (degraded)");
+        }
+
+        log.info("JD parsed using rule-based fallback: {} hard requirements extracted",
+                result.getHardRequirements().size());
+        return result;
     }
 
     /**

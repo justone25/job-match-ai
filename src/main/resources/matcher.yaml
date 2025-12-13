@@ -1,0 +1,178 @@
+# Matcher Configuration
+# Location: resources/ (built-in) + ~/.jobmatch/ (user extension)
+# Based on PRD v3.2 configuration requirements
+
+version: "1.0.0"
+updated_at: "2025-12-13"
+
+# Hard Gate Checker Configuration
+hard_gate:
+  # Borderline threshold settings
+  borderline:
+    # Years delta to consider as borderline (e.g., requires 5 years, has 4+ years)
+    delta_years: 1
+
+  # Confidence scores for different match types
+  confidence:
+    direct_match: 0.90
+    implied_match: 0.75
+    keyword_match: 0.70
+    unknown: 0.30
+
+  # Duration parsing defaults
+  duration:
+    # Default months when cannot parse duration string
+    default_months: 12
+
+  # Proficiency level scoring
+  proficiency:
+    level_map:
+      expert: 4
+      proficient: 3
+      familiar: 2
+      beginner: 1
+    # Chinese aliases mapping to standard levels
+    aliases:
+      精通: expert
+      专家: expert
+      熟练: proficient
+      熟悉: proficient
+      了解: familiar
+      掌握: familiar
+      入门: beginner
+      初学: beginner
+
+  # Education level scoring
+  education:
+    level_map:
+      phd: 5
+      master: 4
+      bachelor: 3
+      associate: 2
+      high_school: 1
+    # Chinese/English aliases mapping to standard levels
+    aliases:
+      博士: phd
+      doctor: phd
+      硕士: master
+      研究生: master
+      本科: bachelor
+      学士: bachelor
+      大专: associate
+      专科: associate
+      高中: high_school
+      中专: high_school
+
+  # Policy for unknown requirements
+  unknown_policy:
+    # How to treat unknown requirement types: SKIP, FAIL, UNKNOWN
+    default_status: UNKNOWN
+    # Whether to log warnings for unknown types
+    log_warning: true
+
+# Soft Score Calculator Configuration
+soft_score:
+  # Dimension weights (should sum to 1.0)
+  weights:
+    skill: 0.60
+    experience: 0.30
+    bonus: 0.10
+
+  # Skill scoring parameters
+  skill:
+    # Base points per required skill
+    base_point: 10
+    # Multiplier for inferred match (vs direct match)
+    inference_multiplier: 0.80
+    # Multiplier for partial/category match
+    partial_multiplier: 0.50
+
+  # Experience scoring thresholds
+  experience:
+    thresholds:
+      matched: 70
+      partial: 40
+
+  # Bonus scoring parameters
+  bonus:
+    bonus_skill_points: 15
+    normal_skill_points: 10
+    unique_strength_max: 20
+    expert_skill_bonus: 5
+
+  # Industry keywords for relevance calculation
+  industry_keywords:
+    - 金融
+    - 互联网
+    - 电商
+    - 教育
+    - 医疗
+    - 游戏
+    - 物流
+    - 旅游
+    - 机票
+    - 文旅
+
+  # Project similarity keywords
+  project_keywords:
+    - 微服务
+    - 分布式
+    - 高并发
+    - 架构
+    - 优化
+    - 性能
+    - 支付
+    - 订单
+    - 搜索
+    - 推荐
+
+# Gap Analyzer Configuration
+gap_analyzer:
+  # Impact level definitions
+  impact_levels:
+    high:
+      label: high
+      description: 核心要求，必须满足
+    medium:
+      label: medium
+      description: 重要要求，建议满足
+    low:
+      label: low
+      description: 加分项，非必须
+
+  # Valuable skill categories for extra strengths
+  valuable_categories:
+    - bigdata
+    - ai_ml
+    - cloud
+
+  # Suggestion templates by category
+  suggestion_templates:
+    backend: "建议通过项目实践学习 {skill}，可以从官方文档和在线教程入手"
+    frontend: "建议通过构建小项目学习 {skill}，注重实践"
+    database: "建议在本地搭建 {skill} 环境，通过实际操作学习"
+    devops: "建议在云平台或本地虚拟机上实践 {skill}"
+    cloud: "建议申请免费试用账号，实际操作 {skill}"
+    bigdata: "建议从单机模式开始学习 {skill}，逐步过渡到分布式环境"
+    ai_ml: "建议通过 Kaggle 竞赛或开源项目实践 {skill}"
+    default: "建议系统学习 {skill}"
+
+# Action Generator Configuration
+action_generator:
+  # Resume edit types
+  edit_types:
+    highlight: 突出核心优势
+    modify: 修改现有内容
+    add: 添加新内容
+
+  # Learning plan settings
+  learning_plan:
+    default_duration: 1周
+    max_focus_areas: 5
+    hours_per_day: 2
+
+# Report metadata settings
+report:
+  # Include version info in report for reproducibility
+  include_config_version: true
+  include_rules_version: true

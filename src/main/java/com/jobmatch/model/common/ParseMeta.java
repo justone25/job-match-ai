@@ -62,4 +62,16 @@ public class ParseMeta {
     @JsonProperty("from_cache")
     @Builder.Default
     private Boolean fromCache = false;
+
+    /**
+     * Matcher config version for reproducibility.
+     */
+    @JsonProperty("config_version")
+    private String configVersion;
+
+    /**
+     * Skill implication rules version for reproducibility.
+     */
+    @JsonProperty("rules_version")
+    private String rulesVersion;
 }

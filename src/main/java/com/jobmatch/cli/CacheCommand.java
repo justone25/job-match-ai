@@ -1,8 +1,10 @@
 package com.jobmatch.cli;
 
+import com.jobmatch.storage.StorageService;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
@@ -28,14 +30,29 @@ public class CacheCommand implements Callable<Integer> {
     static class StatusCommand implements Callable<Integer> {
         @Override
         public Integer call() {
+            StorageService storage = StorageService.getInstance();
+            StorageService.CacheStats stats = storage.getCacheStats();
+
             System.out.println();
-            System.out.println("Cache Status:");
-            System.out.println("-------------");
+            System.out.println("╔══════════════════════════════════════════════════╗");
+            System.out.println("║                  Cache Status                     ║");
+            System.out.println("╚══════════════════════════════════════════════════╝");
             System.out.println();
-            System.out.println("Cache directory: ~/.jobmatch/cache/");
+            System.out.println("  Status:    " + (stats.isEnabled() ? "✅ Enabled" : "❌ Disabled"));
+            System.out.println("  Directory: " + stats.getCacheDir());
+            System.out.println("  TTL:       " + stats.getTtlDays() + " days");
             System.out.println();
-            System.out.println("[Info] Cache statistics - Coming soon in Phase 3...");
+            System.out.println("  Statistics:");
+            System.out.println("  ─────────────────────────────");
+            System.out.println("  Files:     " + stats.getFileCount());
+            System.out.println("  Size:      " + stats.getTotalSizeMb() + " MB");
+            System.out.println("  Expired:   " + stats.getExpiredCount());
             System.out.println();
+
+            if (stats.getExpiredCount() > 0) {
+                System.out.println("  Tip: Run 'jobmatch cache clear --expired' to remove expired entries.");
+            }
+
             return 0;
         }
     }
@@ -45,20 +62,36 @@ public class CacheCommand implements Callable<Integer> {
         @Option(names = {"--expired"}, description = "Only clear expired cache")
         private boolean expiredOnly;
 
-        @Option(names = {"--type"}, description = "Cache type to clear: jd, resume, skill")
-        private String type;
+        @Option(names = {"-f", "--force"}, description = "Skip confirmation")
+        private boolean force;
 
         @Override
         public Integer call() {
-            System.out.println();
+            StorageService storage = StorageService.getInstance();
+
             if (expiredOnly) {
-                System.out.println("[Info] Clearing expired cache - Coming soon...");
-            } else if (type != null) {
-                System.out.println("[Info] Clearing " + type + " cache - Coming soon...");
-            } else {
-                System.out.println("[Info] Clearing all cache - Coming soon...");
+                int count = storage.clearExpiredCache();
+                System.out.println("[Info] Cleared " + count + " expired cache entries.");
+                return 0;
             }
-            System.out.println();
+
+            // Clear all cache
+            if (!force) {
+                System.out.print("Are you sure you want to clear all cache? (y/N): ");
+                try {
+                    int ch = System.in.read();
+                    if (ch != 'y' && ch != 'Y') {
+                        System.out.println("Cancelled.");
+                        return 0;
+                    }
+                } catch (IOException e) {
+                    System.out.println("Cancelled.");
+                    return 0;
+                }
+            }
+
+            int count = storage.clearAllCache();
+            System.out.println("[Info] Cleared " + count + " cache entries.");
             return 0;
         }
     }

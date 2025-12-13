@@ -1,7 +1,6 @@
 package com.jobmatch.cli;
 
-import com.jobmatch.config.AppConfig;
-import com.jobmatch.config.ConfigLoader;
+import com.jobmatch.config.*;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -62,6 +61,25 @@ public class ConfigCommand implements Callable<Integer> {
                 System.out.println("  default_format: " + config.getOutput().getDefaultFormat());
                 System.out.println("  color: " + config.getOutput().isColor());
 
+                // Show matcher config version
+                System.out.println();
+                MatcherConfig matcherConfig = MatcherConfigLoader.getInstance().getConfig();
+                System.out.println("Matcher Config:");
+                System.out.println("  version: " + matcherConfig.getVersion());
+                System.out.println("  updated_at: " + matcherConfig.getUpdatedAt());
+                System.out.println("  weights: skill=" + matcherConfig.getSoftScore().getWeights().getSkill() +
+                        ", experience=" + matcherConfig.getSoftScore().getWeights().getExperience() +
+                        ", bonus=" + matcherConfig.getSoftScore().getWeights().getBonus());
+
+                // Show skill implication config version
+                System.out.println();
+                SkillImplicationConfig implConfig = SkillImplicationLoader.getInstance().getConfig();
+                System.out.println("Skill Implication Rules:");
+                System.out.println("  version: " + implConfig.getVersion());
+                System.out.println("  updated_at: " + implConfig.getUpdatedAt());
+                System.out.println("  rules_count: " + implConfig.getRuleCount());
+                System.out.println("  llm_fallback: " + (implConfig.getSettings().getLlmFallback().isEnabled() ? "enabled" : "disabled"));
+
                 System.out.println();
             } catch (Exception e) {
                 System.err.println("[Error] Failed to load configuration: " + e.getMessage());
@@ -89,7 +107,7 @@ public class ConfigCommand implements Callable<Integer> {
         }
     }
 
-    @Command(name = "validate", description = "Validate current configuration")
+    @Command(name = "validate", description = "Validate all configuration files")
     static class ValidateCommand implements Callable<Integer> {
         @Override
         public Integer call() {
@@ -97,48 +115,51 @@ public class ConfigCommand implements Callable<Integer> {
             System.out.println("Validating configuration...");
             System.out.println();
 
-            try {
-                AppConfig config = ConfigLoader.load();
-                boolean allValid = true;
+            ConfigValidator.ValidationResult result = ConfigValidator.validateAll();
 
-                // Check LLM provider
-                String provider = config.getLlm().getProvider();
-                if ("local".equals(provider)) {
-                    System.out.println("[✓] llm.provider: local");
-                    System.out.println("[✓] llm.local.base_url: " + config.getLlm().getLocal().getBaseUrl());
-                    System.out.println("[✓] llm.local.model: " + config.getLlm().getLocal().getModel());
-                    // TODO: Check if Ollama is running
-                    System.out.println("[?] Ollama connection check - Coming soon...");
-                } else if ("cloud".equals(provider)) {
-                    System.out.println("[✓] llm.provider: cloud");
-                    String apiKey = config.getLlm().getCloud().getApiKey();
-                    if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
-                        System.out.println("[✗] llm.cloud.api_key: not set");
-                        System.out.println("    → Please set environment variable LLM_API_KEY or configure in settings.yaml");
-                        allValid = false;
-                    } else {
-                        System.out.println("[✓] llm.cloud.api_key: (set)");
-                    }
+            // Print errors
+            if (!result.getErrors().isEmpty()) {
+                System.out.println("Errors:");
+                for (String error : result.getErrors()) {
+                    System.out.println("  [✗] " + error);
                 }
-
-                // Check storage directories
-                System.out.println("[✓] storage.data_dir: " + config.getStorage().getDataDir());
-                System.out.println("[✓] storage.cache_dir: " + config.getStorage().getCacheDir());
-
                 System.out.println();
-                if (allValid) {
-                    System.out.println("Configuration validation passed!");
-                } else {
-                    System.out.println("Configuration validation failed. Please fix the issues above.");
-                    return 1;
-                }
-
-            } catch (Exception e) {
-                System.err.println("[✗] Failed to load configuration: " + e.getMessage());
-                return 1;
             }
 
-            return 0;
+            // Print warnings
+            if (!result.getWarnings().isEmpty()) {
+                System.out.println("Warnings:");
+                for (String warning : result.getWarnings()) {
+                    System.out.println("  [!] " + warning);
+                }
+                System.out.println();
+            }
+
+            // Additional LLM connectivity check
+            System.out.println("Checking LLM connectivity...");
+            try {
+                AppConfig config = ConfigLoader.load();
+                String provider = config.getLlm().getProvider();
+                if ("local".equals(provider)) {
+                    System.out.println("  [?] Ollama at " + config.getLlm().getLocal().getBaseUrl());
+                    System.out.println("      Run 'jobmatch analyze' to verify connectivity");
+                } else if ("cloud".equals(provider)) {
+                    System.out.println("  [✓] Cloud provider configured");
+                }
+            } catch (Exception e) {
+                System.out.println("  [!] Could not check LLM config: " + e.getMessage());
+            }
+
+            System.out.println();
+            if (result.isValid()) {
+                System.out.println("Configuration validation passed!");
+                System.out.println("  Errors: 0, Warnings: " + result.getWarningCount());
+                return 0;
+            } else {
+                System.out.println("Configuration validation failed.");
+                System.out.println("  Errors: " + result.getErrorCount() + ", Warnings: " + result.getWarningCount());
+                return 1;
+            }
         }
     }
 

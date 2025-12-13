@@ -8,8 +8,8 @@ llm:
   # Local LLM configuration (Ollama)
   local:
     base_url: "http://localhost:11434"
-    model: "qwen2.5:14b"
-    timeout: 120
+    model: "qwen2.5:7b"
+    timeout: 180
 
   # Cloud LLM configuration
   cloud:

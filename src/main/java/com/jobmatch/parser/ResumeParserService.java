@@ -23,6 +23,7 @@ import java.util.List;
 /**
  * Service for parsing resume text into structured data.
  * Uses LLM for extraction with JSON output.
+ * Falls back to rule-based parsing when LLM is unavailable.
  */
 public class ResumeParserService {
 
@@ -32,10 +33,18 @@ public class ResumeParserService {
 
     private final LlmClient llmClient;
     private final String promptTemplate;
+    private final RuleBasedParser ruleBasedParser;
+    private final boolean fallbackEnabled;
 
     public ResumeParserService(LlmClient llmClient) {
+        this(llmClient, true);
+    }
+
+    public ResumeParserService(LlmClient llmClient, boolean fallbackEnabled) {
         this.llmClient = llmClient;
         this.promptTemplate = loadPromptTemplate();
+        this.ruleBasedParser = new RuleBasedParser();
+        this.fallbackEnabled = fallbackEnabled;
     }
 
     /**
@@ -97,11 +106,36 @@ public class ResumeParserService {
 
         } catch (LlmException e) {
             log.error("LLM error during resume parsing: {}", e.getMessage());
+            if (fallbackEnabled) {
+                log.warn("Falling back to rule-based parsing for resume");
+                return fallbackParse(resumeText, contentHash);
+            }
             throw new JobMatchException(2001, "Resume parsing failed: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Unexpected error during resume parsing", e);
+            if (fallbackEnabled) {
+                log.warn("Falling back to rule-based parsing for resume");
+                return fallbackParse(resumeText, contentHash);
+            }
             throw new JobMatchException(2001, "Resume parsing failed: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Fallback to rule-based parsing when LLM fails.
+     */
+    private ResumeParsed fallbackParse(String resumeText, String contentHash) {
+        ResumeParsed result = ruleBasedParser.parseResume(resumeText);
+        result.setContentHash(contentHash);
+
+        // Mark as degraded/simplified mode
+        if (result.getParseMeta() != null) {
+            ParseMeta meta = result.getParseMeta();
+            meta.setModelVersion("rule-engine-v1 (degraded)");
+        }
+
+        log.info("Resume parsed using rule-based fallback: {} skills extracted", result.getSkills().size());
+        return result;
     }
 
     /**

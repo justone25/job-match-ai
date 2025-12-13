@@ -29,7 +29,7 @@ class ConfigLoaderTest {
         assertNotNull(config.getLlm());
         assertEquals("local", config.getLlm().getProvider());
         assertEquals("http://localhost:11434", config.getLlm().getLocal().getBaseUrl());
-        assertEquals("qwen2.5:14b", config.getLlm().getLocal().getModel());
+        assertEquals("qwen2.5:7b", config.getLlm().getLocal().getModel());
     }
 
     @Test

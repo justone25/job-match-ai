@@ -1,0 +1,435 @@
+# Skill Implication Rules
+# Location: resources/ (built-in) + ~/.jobmatch/ (user extension)
+# Based on PRD v3.2 skill inference requirements
+
+version: "1.0.0"
+updated_at: "2025-12-13"
+
+rules:
+  # =====================
+  # Java Ecosystem
+  # =====================
+  - id: "java-spring-core"
+    triggers:
+      - Spring
+      - Spring Boot
+      - Spring MVC
+      - SpringBoot
+      - SpringMVC
+    implies:
+      - Java
+      - Java Programming
+      - Java编程
+    confidence: 0.95
+    evidence_template: "具备 {trigger} 经验，可推断掌握 {implied}"
+    priority: 1
+
+  - id: "java-spring-cloud"
+    triggers:
+      - Spring Cloud
+      - SpringCloud
+    implies:
+      - Java
+      - Java Programming
+      - Java编程
+      - Distributed Systems
+      - 分布式
+      - Microservices
+      - 微服务
+    confidence: 0.90
+    evidence_template: "{trigger} 经验表明具备 {implied} 能力"
+    priority: 1
+
+  - id: "java-orm"
+    triggers:
+      - MyBatis
+      - Hibernate
+      - JPA
+      - MyBatis-Plus
+    implies:
+      - Java
+      - Java Programming
+      - Java编程
+      - Database
+      - 数据库
+    confidence: 0.90
+    evidence_template: "使用 {trigger}，可推断具备 {implied} 能力"
+    priority: 2
+
+  - id: "java-build-tools"
+    triggers:
+      - Maven
+      - Gradle
+    implies:
+      - Java
+      - Java Programming
+    confidence: 0.85
+    evidence_template: "{trigger} 使用经验表明了解 {implied}"
+    priority: 3
+
+  - id: "java-runtime"
+    triggers:
+      - JVM
+      - JDK
+      - Tomcat
+      - Netty
+    implies:
+      - Java
+      - Java Programming
+      - Java编程
+    confidence: 0.90
+    evidence_template: "{trigger} 经验表明掌握 {implied}"
+    priority: 2
+
+  - id: "java-testing"
+    triggers:
+      - JUnit
+      - Mockito
+      - TestNG
+    implies:
+      - Java
+      - Java Programming
+      - Testing
+      - 测试
+    confidence: 0.85
+    evidence_template: "{trigger} 使用表明具备 {implied} 能力"
+    priority: 3
+
+  - id: "java-logging"
+    triggers:
+      - Log4j
+      - Logback
+      - SLF4J
+    implies:
+      - Java
+      - Java Programming
+    confidence: 0.80
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 4
+
+  - id: "java-lombok"
+    triggers:
+      - Lombok
+    implies:
+      - Java
+      - Java Programming
+    confidence: 0.80
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 4
+
+  # =====================
+  # Database
+  # =====================
+  - id: "db-relational"
+    triggers:
+      - MySQL
+      - PostgreSQL
+      - Oracle
+      - SQL Server
+      - MariaDB
+    implies:
+      - Database
+      - Database Optimization
+      - 数据库
+      - 数据库优化
+      - SQL
+    confidence: 0.95
+    evidence_template: "{trigger} 经验表明掌握 {implied}"
+    priority: 1
+
+  - id: "db-nosql-cache"
+    triggers:
+      - Redis
+    implies:
+      - Database
+      - Cache
+      - 缓存
+      - NoSQL
+      - 数据库
+    confidence: 0.90
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 2
+
+  - id: "db-nosql-document"
+    triggers:
+      - MongoDB
+    implies:
+      - Database
+      - NoSQL
+      - 数据库
+    confidence: 0.90
+    evidence_template: "{trigger} 经验表明具备 {implied} 能力"
+    priority: 2
+
+  - id: "db-search"
+    triggers:
+      - Elasticsearch
+      - ES
+      - Solr
+    implies:
+      - Database
+      - Search
+      - 搜索
+    confidence: 0.85
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 2
+
+  - id: "db-bigdata"
+    triggers:
+      - HBase
+      - ClickHouse
+      - TiDB
+    implies:
+      - Database
+      - Big Data
+      - 大数据
+      - 数据库
+    confidence: 0.85
+    evidence_template: "{trigger} 经验表明具备 {implied} 能力"
+    priority: 2
+
+  # =====================
+  # Distributed Systems
+  # =====================
+  - id: "distributed-rpc"
+    triggers:
+      - Dubbo
+      - gRPC
+      - Thrift
+    implies:
+      - Distributed Systems
+      - 分布式
+      - Microservices
+      - 微服务
+      - RPC
+    confidence: 0.90
+    evidence_template: "{trigger} 经验说明具备 {implied} 知识"
+    priority: 1
+
+  - id: "distributed-mq"
+    triggers:
+      - Kafka
+      - RabbitMQ
+      - RocketMQ
+      - ActiveMQ
+    implies:
+      - Distributed Systems
+      - Message Queue
+      - 消息队列
+      - 分布式
+    confidence: 0.85
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 2
+
+  - id: "distributed-coordination"
+    triggers:
+      - Zookeeper
+      - Nacos
+      - Eureka
+      - Consul
+    implies:
+      - Distributed Systems
+      - 分布式
+      - Service Discovery
+      - 服务发现
+    confidence: 0.85
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 2
+
+  # =====================
+  # Multithreading
+  # =====================
+  - id: "multithreading-java"
+    triggers:
+      - concurrent
+      - Concurrent
+      - ThreadPool
+      - ExecutorService
+      - synchronized
+      - Lock
+      - ReentrantLock
+    implies:
+      - Multithreading
+      - 多线程
+      - 并发
+      - Multithreading programming and tuning
+    confidence: 0.90
+    evidence_template: "{trigger} 使用表明具备 {implied} 能力"
+    priority: 1
+
+  - id: "multithreading-chinese"
+    triggers:
+      - 高并发
+      - 多线程
+      - 线程池
+      - 并发编程
+    implies:
+      - Multithreading
+      - High Concurrency
+      - Concurrent Programming
+      - Multithreading programming and tuning
+    confidence: 0.95
+    evidence_template: "{trigger} 经验表明掌握 {implied}"
+    priority: 1
+
+  - id: "multithreading-nio"
+    triggers:
+      - Netty
+      - NIO
+      - 异步编程
+    implies:
+      - Multithreading
+      - 多线程
+      - NIO
+      - 网络编程
+      - Multithreading programming and tuning
+    confidence: 0.85
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 2
+
+  # =====================
+  # Container/Cloud
+  # =====================
+  - id: "container-docker"
+    triggers:
+      - Docker
+    implies:
+      - Container
+      - 容器
+      - DevOps
+    confidence: 0.90
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 1
+
+  - id: "container-k8s"
+    triggers:
+      - Kubernetes
+      - K8s
+    implies:
+      - Container
+      - 容器
+      - K8s
+      - DevOps
+      - Cloud Native
+      - 云原生
+    confidence: 0.90
+    evidence_template: "{trigger} 经验表明具备 {implied} 能力"
+    priority: 1
+
+  - id: "cloud-providers"
+    triggers:
+      - AWS
+      - Alibaba Cloud
+      - 阿里云
+      - Azure
+      - GCP
+      - 腾讯云
+    implies:
+      - Cloud
+      - 云计算
+    confidence: 0.85
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 2
+
+  # =====================
+  # Distributed Components and Frameworks
+  # =====================
+  - id: "distributed-frameworks"
+    triggers:
+      - Spring Cloud
+      - Dubbo
+      - Service Mesh
+      - Istio
+    implies:
+      - Distributed components and frameworks
+      - 分布式组件与框架
+      - Distributed Systems
+    confidence: 0.95
+    evidence_template: "{trigger} 经验表明掌握 {implied}"
+    priority: 1
+
+  - id: "distributed-components"
+    triggers:
+      - Kafka
+      - Redis
+      - Zookeeper
+      - Nacos
+      - RabbitMQ
+      - Elasticsearch
+    implies:
+      - Distributed components and frameworks
+      - 分布式组件与框架
+    confidence: 0.85
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 2
+
+  # =====================
+  # Big Data
+  # =====================
+  - id: "bigdata-hadoop"
+    triggers:
+      - Hadoop
+      - HDFS
+      - MapReduce
+    implies:
+      - Big Data
+      - 大数据
+      - Distributed Systems
+    confidence: 0.90
+    evidence_template: "{trigger} 经验表明具备 {implied} 能力"
+    priority: 1
+
+  - id: "bigdata-spark"
+    triggers:
+      - Spark
+      - Flink
+      - Storm
+    implies:
+      - Big Data
+      - 大数据
+      - Real-time Computing
+      - 实时计算
+    confidence: 0.90
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 1
+
+  - id: "bigdata-warehouse"
+    triggers:
+      - Hive
+      - Presto
+      - Druid
+    implies:
+      - Big Data
+      - 大数据
+      - Data Warehouse
+      - 数据仓库
+    confidence: 0.85
+    evidence_template: "{trigger} 使用表明了解 {implied}"
+    priority: 2
+
+# Global settings
+settings:
+  # Default confidence for unspecified rules
+  default_confidence: 0.75
+
+  # Enable reverse mapping (category -> skills)
+  enable_reverse_mapping: true
+
+  # Allow user rules to override built-in rules
+  allow_user_override: true
+
+  # LLM fallback settings
+  llm_fallback:
+    enabled: true
+    min_confidence: 0.60
+    cache_ttl_days: 7
+    prompt_template: |
+      判断技能"{candidate_skill}"是否可以推断候选人具备"{required_skill}"能力。
+
+      分析要点：
+      1. 这两个技能是否属于同一技术栈或生态系统？
+      2. 掌握前者是否通常意味着具备后者的能力？
+      3. 在实际工作中，具备前者技能的人是否通常也会使用后者？
+
+      请以JSON格式返回结果：
+      {"can_imply": true/false, "confidence": 0.0-1.0, "reasoning": "简短解释"}
