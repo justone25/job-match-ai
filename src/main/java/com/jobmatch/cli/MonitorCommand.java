@@ -23,6 +23,7 @@ import java.util.concurrent.Callable;
                 MonitorCommand.InitCommand.class,
                 MonitorCommand.RunCommand.class,
                 MonitorCommand.ListCommand.class,
+                MonitorCommand.ShowCommand.class,
                 MonitorCommand.CronCommand.class
         }
 )
@@ -36,6 +37,7 @@ public class MonitorCommand implements Callable<Integer> {
         System.out.println("  init    Initialize monitor (login to BOSS)");
         System.out.println("  run     Run one crawl cycle");
         System.out.println("  list    List collected jobs");
+        System.out.println("  show    Show job details");
         System.out.println("  cron    Manage cron jobs");
         return 0;
     }
@@ -126,21 +128,26 @@ public class MonitorCommand implements Callable<Integer> {
                 }
 
                 System.out.println("Collected Jobs (" + jobs.size() + " total):");
-                System.out.println("─".repeat(80));
+                System.out.println("─".repeat(85));
+                System.out.printf(" %-3s │ %-35s │ %-18s │ %s%n", "#", "Title", "Company", "Salary");
+                System.out.println("─".repeat(85));
 
                 int count = 0;
                 for (BossJob job : jobs) {
                     if (count >= limit) break;
-                    System.out.printf("%-40s │ %-20s │ %s%n",
-                            truncate(job.getTitle(), 40),
-                            truncate(job.getCompany(), 20),
-                            job.getSalary());
                     count++;
+                    System.out.printf(" %-3d │ %-35s │ %-18s │ %s%n",
+                            count,
+                            truncate(job.getTitle(), 35),
+                            truncate(job.getCompany(), 18),
+                            job.getSalary() != null ? job.getSalary() : "");
                 }
 
                 if (jobs.size() > limit) {
                     System.out.println("... and " + (jobs.size() - limit) + " more");
                 }
+                System.out.println();
+                System.out.println("Tip: Use 'jobmatch monitor show <#>' to view job details");
                 return 0;
             } catch (Exception e) {
                 System.err.println("✗ Failed to list jobs: " + e.getMessage());
@@ -151,6 +158,177 @@ public class MonitorCommand implements Callable<Integer> {
         private String truncate(String s, int maxLen) {
             if (s == null) return "";
             return s.length() > maxLen ? s.substring(0, maxLen - 3) + "..." : s;
+        }
+    }
+
+    /**
+     * Show job details.
+     */
+    @Command(name = "show", description = "Show job details")
+    public static class ShowCommand implements Callable<Integer> {
+
+        @picocli.CommandLine.Parameters(index = "0", description = "Job number (from list) or job ID")
+        private String jobRef;
+
+        @Option(names = {"--open"}, description = "Open job URL in browser")
+        private boolean openBrowser;
+
+        @Override
+        public Integer call() {
+            try {
+                MonitorService service = new MonitorService();
+                List<BossJob> jobs = service.getAllJobs();
+
+                if (jobs.isEmpty()) {
+                    System.out.println("No jobs collected yet.");
+                    return 0;
+                }
+
+                BossJob job = findJob(jobs, jobRef);
+                if (job == null) {
+                    System.err.println("✗ Job not found: " + jobRef);
+                    System.out.println("  Use 'jobmatch monitor list' to see available jobs");
+                    return 1;
+                }
+
+                // Display job details
+                printJobDetails(job);
+
+                // Open in browser if requested
+                if (openBrowser && job.getUrl() != null) {
+                    openUrl(job.getUrl());
+                }
+
+                return 0;
+            } catch (Exception e) {
+                System.err.println("✗ Failed to show job: " + e.getMessage());
+                return 1;
+            }
+        }
+
+        private BossJob findJob(List<BossJob> jobs, String ref) {
+            // Try to parse as number (1-based index)
+            try {
+                int index = Integer.parseInt(ref);
+                if (index >= 1 && index <= jobs.size()) {
+                    return jobs.get(index - 1);
+                }
+            } catch (NumberFormatException ignored) {
+            }
+
+            // Try to match by job ID or partial title/company
+            String lowerRef = ref.toLowerCase();
+            for (BossJob job : jobs) {
+                if (job.getJobId().equals(ref)) {
+                    return job;
+                }
+                if (job.getTitle() != null && job.getTitle().toLowerCase().contains(lowerRef)) {
+                    return job;
+                }
+                if (job.getCompany() != null && job.getCompany().toLowerCase().contains(lowerRef)) {
+                    return job;
+                }
+            }
+            return null;
+        }
+
+        private void printJobDetails(BossJob job) {
+            System.out.println();
+            System.out.println("═".repeat(70));
+            System.out.println("  " + (job.getTitle() != null ? job.getTitle() : "Unknown Title"));
+            System.out.println("═".repeat(70));
+            System.out.println();
+
+            // Basic info
+            printField("Company", job.getCompany());
+            printField("Salary", job.getSalary());
+            printField("Location", formatLocation(job));
+            printField("Experience", job.getExperience());
+            printField("Education", job.getEducation());
+            System.out.println();
+
+            // Description
+            if (job.getDescription() != null && !job.getDescription().isEmpty()) {
+                System.out.println("─".repeat(70));
+                System.out.println("  Job Description");
+                System.out.println("─".repeat(70));
+                System.out.println();
+                // Format description with word wrap
+                printWrapped(job.getDescription(), 68);
+                System.out.println();
+            }
+
+            // Link
+            System.out.println("─".repeat(70));
+            printField("URL", job.getUrl());
+            printField("Collected", job.getFirstSeenAt() != null ?
+                    job.getFirstSeenAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "");
+            System.out.println();
+            System.out.println("Tip: Use 'jobmatch monitor show " + job.getJobId() + " --open' to open in browser");
+            System.out.println();
+        }
+
+        private void printField(String label, String value) {
+            if (value != null && !value.isEmpty()) {
+                System.out.printf("  %-12s: %s%n", label, value);
+            }
+        }
+
+        private String formatLocation(BossJob job) {
+            StringBuilder sb = new StringBuilder();
+            if (job.getCity() != null && !job.getCity().isEmpty()) {
+                sb.append(job.getCity());
+            }
+            if (job.getDistrict() != null && !job.getDistrict().isEmpty()) {
+                if (sb.length() > 0) sb.append(" · ");
+                sb.append(job.getDistrict());
+            }
+            return sb.toString();
+        }
+
+        private void printWrapped(String text, int width) {
+            if (text == null) return;
+            // Split into paragraphs and wrap each
+            String[] paragraphs = text.split("\n");
+            for (String para : paragraphs) {
+                para = para.trim();
+                if (para.isEmpty()) {
+                    System.out.println();
+                    continue;
+                }
+                // Simple word wrap
+                int pos = 0;
+                while (pos < para.length()) {
+                    int end = Math.min(pos + width, para.length());
+                    if (end < para.length() && para.charAt(end) != ' ') {
+                        // Find last space
+                        int lastSpace = para.lastIndexOf(' ', end);
+                        if (lastSpace > pos) {
+                            end = lastSpace;
+                        }
+                    }
+                    System.out.println("  " + para.substring(pos, end).trim());
+                    pos = end + 1;
+                }
+            }
+        }
+
+        private void openUrl(String url) {
+            try {
+                String os = System.getProperty("os.name").toLowerCase();
+                ProcessBuilder pb;
+                if (os.contains("mac")) {
+                    pb = new ProcessBuilder("open", url);
+                } else if (os.contains("win")) {
+                    pb = new ProcessBuilder("cmd", "/c", "start", url);
+                } else {
+                    pb = new ProcessBuilder("xdg-open", url);
+                }
+                pb.start();
+                System.out.println("  Opening in browser...");
+            } catch (Exception e) {
+                System.err.println("  Failed to open browser: " + e.getMessage());
+            }
         }
     }
 
