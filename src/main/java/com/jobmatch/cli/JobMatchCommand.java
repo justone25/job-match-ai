@@ -23,6 +23,8 @@ import java.util.concurrent.Callable;
                 CacheCommand.class,
                 DictionaryCommand.class,
                 FeedbackCommand.class,
+                MonitorCommand.class,
+                WeeklySummaryCommand.class,
                 VersionCommand.class,
                 CommandLine.HelpCommand.class
         }

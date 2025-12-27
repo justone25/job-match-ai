@@ -6,6 +6,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.jobmatch.config.AppConfig;
 import com.jobmatch.config.ConfigLoader;
 import com.jobmatch.model.match.MatchReport;
+import com.jobmatch.model.monitor.BossJob;
+import com.jobmatch.model.monitor.WeeklySummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,8 @@ public class StorageService {
     private final Path cacheDir;
     private final Path historyDir;
     private final Path feedbackDir;
+    private final Path monitorDir;
+    private final Path summaryDir;
     private final boolean cacheEnabled;
     private final int cacheTtlDays;
 
@@ -50,6 +54,8 @@ public class StorageService {
         this.cacheDir = Paths.get(ConfigLoader.expandPath(config.getCacheDir()));
         this.historyDir = dataDir.resolve("history");
         this.feedbackDir = dataDir.resolve("feedback");
+        this.monitorDir = dataDir.resolve("monitor");
+        this.summaryDir = dataDir.resolve("summary");
         this.cacheEnabled = config.isCacheEnabled();
         this.cacheTtlDays = config.getCacheTtlDays();
 
@@ -70,6 +76,8 @@ public class StorageService {
             Files.createDirectories(cacheDir);
             Files.createDirectories(historyDir);
             Files.createDirectories(feedbackDir);
+            Files.createDirectories(monitorDir);
+            Files.createDirectories(summaryDir);
             log.debug("Storage directories initialized: data={}, cache={}", dataDir, cacheDir);
         } catch (IOException e) {
             log.error("Failed to create storage directories", e);
@@ -411,5 +419,159 @@ public class StorageService {
         public double getHelpfulRate() {
             return total > 0 ? (double) helpful / total * 100 : 0;
         }
+    }
+
+    // ===================== Monitor Job Management =====================
+
+    /**
+     * Save a BOSS job.
+     */
+    public void saveJob(BossJob job) throws IOException {
+        String filename = job.getJobId() + ".json";
+        Path filePath = monitorDir.resolve(filename);
+        objectMapper.writeValue(filePath.toFile(), job);
+        log.debug("Saved job: {}", job.getJobId());
+    }
+
+    /**
+     * Load a BOSS job by ID.
+     */
+    public Optional<BossJob> loadJob(String jobId) {
+        Path filePath = monitorDir.resolve(jobId + ".json");
+        if (!Files.exists(filePath)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(objectMapper.readValue(filePath.toFile(), BossJob.class));
+        } catch (IOException e) {
+            log.error("Failed to load job: {}", jobId, e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Check if a job exists.
+     */
+    public boolean jobExists(String jobId) {
+        return Files.exists(monitorDir.resolve(jobId + ".json"));
+    }
+
+    /**
+     * List all saved jobs.
+     */
+    public List<BossJob> listJobs() {
+        List<BossJob> jobs = new ArrayList<>();
+        try (Stream<Path> files = Files.list(monitorDir)) {
+            files.filter(p -> p.toString().endsWith(".json"))
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(p -> {
+                        try {
+                            jobs.add(objectMapper.readValue(p.toFile(), BossJob.class));
+                        } catch (IOException e) {
+                            log.warn("Failed to read job: {}", p, e);
+                        }
+                    });
+        } catch (IOException e) {
+            log.error("Failed to list jobs", e);
+        }
+        return jobs;
+    }
+
+    /**
+     * Get all job IDs.
+     */
+    public Set<String> getAllJobIds() {
+        Set<String> ids = new HashSet<>();
+        try (Stream<Path> files = Files.list(monitorDir)) {
+            files.filter(p -> p.toString().endsWith(".json"))
+                    .forEach(p -> {
+                        String filename = p.getFileName().toString();
+                        ids.add(filename.replace(".json", ""));
+                    });
+        } catch (IOException e) {
+            log.error("Failed to list job IDs", e);
+        }
+        return ids;
+    }
+
+    /**
+     * Get monitor directory path.
+     */
+    public Path getMonitorDir() {
+        return monitorDir;
+    }
+
+    // ===================== Weekly Summary Management =====================
+
+    /**
+     * Save a weekly summary.
+     */
+    public void saveSummary(WeeklySummary summary) throws IOException {
+        String filename = summary.getReportId() + ".json";
+        Path filePath = summaryDir.resolve(filename);
+        objectMapper.writeValue(filePath.toFile(), summary);
+        log.info("Saved weekly summary: {}", summary.getReportId());
+    }
+
+    /**
+     * Load a weekly summary by ID.
+     */
+    public Optional<WeeklySummary> loadSummary(String reportId) {
+        Path filePath = summaryDir.resolve(reportId + ".json");
+        if (!Files.exists(filePath)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(objectMapper.readValue(filePath.toFile(), WeeklySummary.class));
+        } catch (IOException e) {
+            log.error("Failed to load summary: {}", reportId, e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Load the latest weekly summary.
+     */
+    public Optional<WeeklySummary> loadLatestSummary() {
+        try (Stream<Path> files = Files.list(summaryDir)) {
+            Optional<Path> latest = files
+                    .filter(p -> p.toString().endsWith(".json"))
+                    .max(Comparator.comparing(p -> p.getFileName().toString()));
+
+            if (latest.isPresent()) {
+                return Optional.of(objectMapper.readValue(latest.get().toFile(), WeeklySummary.class));
+            }
+        } catch (IOException e) {
+            log.error("Failed to load latest summary", e);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * List all weekly summaries.
+     */
+    public List<WeeklySummary> listSummaries() {
+        List<WeeklySummary> summaries = new ArrayList<>();
+        try (Stream<Path> files = Files.list(summaryDir)) {
+            files.filter(p -> p.toString().endsWith(".json"))
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(p -> {
+                        try {
+                            summaries.add(objectMapper.readValue(p.toFile(), WeeklySummary.class));
+                        } catch (IOException e) {
+                            log.warn("Failed to read summary: {}", p, e);
+                        }
+                    });
+        } catch (IOException e) {
+            log.error("Failed to list summaries", e);
+        }
+        return summaries;
+    }
+
+    /**
+     * Get summary directory path.
+     */
+    public Path getSummaryDir() {
+        return summaryDir;
     }
 }

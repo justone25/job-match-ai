@@ -14,6 +14,8 @@ public class AppConfig {
     private LoggingConfig logging = new LoggingConfig();
     private OutputConfig output = new OutputConfig();
     private PrivacyConfig privacy = new PrivacyConfig();
+    private MonitorConfig monitor = new MonitorConfig();
+    private WeeklySummaryConfig weeklySummary = new WeeklySummaryConfig();
 
     @Data
     public static class LlmConfig {
@@ -74,5 +76,30 @@ public class AppConfig {
     public static class PrivacyConfig {
         private boolean piiMasking = true;
         private boolean telemetry = false;
+    }
+
+    @Data
+    public static class MonitorConfig {
+        private boolean enabled = true;
+        private String searchKeywords = "AI应用开发";
+        private String city = "全国";
+        private String salaryRange = "";
+        private String experience = "";
+        private java.util.List<String> pollingTimes = java.util.List.of("10:00", "18:00");
+        private int retentionDays = 30;
+        private boolean headless = true;
+        // Filter settings
+        private int minSalaryK = 15;        // Minimum salary in K
+        private boolean filterIntern = true; // Filter out intern positions
+        private boolean onlyToday = true;    // Only fetch jobs posted today
+    }
+
+    @Data
+    public static class WeeklySummaryConfig {
+        private boolean enabled = true;
+        private String dayOfWeek = "MONDAY";
+        private int hour = 9;
+        private java.util.List<String> focusAreas = java.util.List.of(
+                "大模型应用", "RAG", "Agent", "LangChain", "向量数据库");
     }
 }

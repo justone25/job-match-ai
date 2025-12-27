@@ -28,6 +28,7 @@
         <junit.version>5.11.3</junit.version>
         <mockito.version>5.14.2</mockito.version>
         <pdfbox.version>3.0.3</pdfbox.version>
+        <playwright.version>1.49.0</playwright.version>
     </properties>
 
     <dependencies>
@@ -86,6 +87,13 @@
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>${pdfbox.version}</version>
+        </dependency>
+
+        <!-- Browser Automation -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>${playwright.version}</version>
         </dependency>
 
         <!-- Lombok -->
